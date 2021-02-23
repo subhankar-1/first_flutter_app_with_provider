@@ -20,18 +20,7 @@ class _SearchListState extends State<SearchList>
   bool cmbscritta = false;
   Map order;var bid,timestamp;
   // ignore: missing_return
-  Future<Map> getcurrencyy(String _searchText) async{
-    print("You have selected "+_searchText);
-    currencyy =await getcurrency(_searchText);
-    openn=currencyy["open"];
-    ask=currencyy["ask"];
-    v=currencyy["volume"];
-    l=currencyy["last"];
-    t=currencyy["timestamp"];
-    b=currencyy["bid"];
-    h=currencyy["high"];
-    low=currencyy["low"];
-  }
+
   Widget appBarTitle = new Text("Enter currency pair", style: new TextStyle(color: Colors.white),);
   Icon actionIcon = new Icon(Icons.search, color: Colors.white,);
   final key = new GlobalKey<ScaffoldState>();
@@ -48,6 +37,8 @@ class _SearchListState extends State<SearchList>
       setState(() {
         _searchText = _searchController.text;
         _search=_searchText.toUpperCase();
+        v=null;
+        cmbscritta=false;
       });
     });
   }
@@ -132,6 +123,7 @@ class _SearchListState extends State<SearchList>
             _handleSearchStart();
             setState(() {
               // _searchController.clear();
+              FocusScope.of(context).requestFocus(new FocusNode());
               _IsSearching = true;
             });},) : null,
           border: OutlineInputBorder(
@@ -238,20 +230,16 @@ class _SearchListState extends State<SearchList>
                   child: cmbscritta ? Text("HIDE ORDER BOOK") : Text("VIEW ORDER BOOK"),
                   //    style: TextStyle(fontSize: 14)
                   onPressed: () {
-                    getorderr(_searchText);
+                    //getorder(_searchText);
                     setState(() {
                       pressGeoON = !pressGeoON;
                       cmbscritta = !cmbscritta;
                     });
                   }
               ),
-            ):Container(), cmbscritta && order!=0 ?/* SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child:*/ DataTable(/*horizontalMargin: 12.0,*/columnSpacing:20.0,headingRowHeight: 28.0,dividerThickness: 0.0, rows: <DataRow>[
-                  for (int i = 0; i < 5; i++) buildDataRow([order["bids"][i][0],order["bids"][i][1],order["asks"][i][1],order["asks"][i][0]]),//(bid[i] + bid[i]).cast<String>()),
-                ], columns: buildDataColumns())//,),)
+            ):Container(), cmbscritta && order!=null && v!=null ?DataTable(/*horizontalMargin: 12.0,*/columnSpacing:10.0,headingRowHeight: 28.0,dividerThickness: 0.0, rows: <DataRow>[
+                  for (int i = 0; i < 5; i++) buildDataRow([order["bids"][i][0],order["bids"][i][1],order["asks"][i][1],order["asks"][i][0]]),
+                ], columns: buildDataColumns())
                 :Center(),]
         )
         ,): Container(
@@ -285,32 +273,61 @@ class _SearchListState extends State<SearchList>
   }
 
 
-
-
   Future<Map> getcurrency(String s) async {
     http.Response response = await http.get(
-        'https://www.bitstamp.net/api/ticker/'+s);
+        'https://www.bitstamp.net/api/v2/ticker/'+s+'/');
+
+    print(response.statusCode);
+    if(response.statusCode==200){
+      setState(() {
+        currencyy=(json.decode(response.body));
+        openn=currencyy["open"];
+        v=currencyy["volume"];
+        l=currencyy["last"];
+        t=currencyy["timestamp"];
+        b=currencyy["bid"];
+        h=currencyy["high"];
+        low=currencyy["low"];
+      });
+    }
+    else{
+      setState(() {
+        currencyy=null;
+        v=null;
+        l=null;
+        t=null;
+        b=null;
+        h=null;
+        low=null;
+      });
+    }
     return (json.decode(response.body));
   }
 
-  Future<Map> getorderr(String s) async{
-    print("You have selected "+s);
-    order =await getorder(s);
-    timestamp= order["timestamp"];
-    bid=order["bids"];
-
-  }
   Future<Map> getorder(String s) async {
     http.Response response = await http.get(
-        'https://www.bitstamp.net/api/order_book/'+s);
+        'https://www.bitstamp.net/api/v2/order_book/'+s+'/');
+    print(response.statusCode);
+
+    if(response.statusCode==200){
+      setState(() {
+        order=(json.decode(response.body));
+      });
+    }
+    else{
+      setState(() {
+        order=null;
+      });
+    }
     return (json.decode(response.body));
   }
   void _handleSearchStart() {
-    getcurrencyy(_searchText);
-    getorderr(_searchText);
+
     setState(() {
+
       _IsSearching = true;
-      //this.body=new Text("$open",textScaleFactor: 1.5,);
+       getcurrency(_searchText);
+       getorder(_searchText);
 
     });
   }
