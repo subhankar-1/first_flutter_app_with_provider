@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:first_flutter_app/pro.dart';
 
 class SearchList extends StatefulWidget {
   SearchList({ Key key }) : super(key: key);
@@ -11,47 +13,31 @@ class SearchList extends StatefulWidget {
 
 }
 
-class _SearchListState extends State<SearchList>
-{
-  Map currency;
-  Map currencyy;
-  var openn,ask,v,l,t,b,h,low;
-  bool pressGeoON = false;
-  bool cmbscritta = false;
-  Map order;var bid,timestamp;
-  // ignore: missing_return
-
-  Widget appBarTitle = new Text("Enter currency pair", style: new TextStyle(color: Colors.white),);
-  Icon actionIcon = new Icon(Icons.search, color: Colors.white,);
+class _SearchListState extends State<SearchList> {
   final key = new GlobalKey<ScaffoldState>();
+  TextEditingController _searchController ;
   String _searchText = "";
-  final TextEditingController _searchController = TextEditingController();
-  bool _IsSearching=false;
   String _search = "";
+  FocusNode focusNode = FocusNode();
+
 
   @override
   void initState() {
+    final Pro myProvider = Provider.of<Pro>(context, listen: false);
     super.initState();
-
-    _searchController.addListener(() {
-      setState(() {
-        _searchText = _searchController.text;
-        _search=_searchText.toUpperCase();
-        v=null;
-        cmbscritta=false;
-      });
+    _searchController = TextEditingController(text: myProvider.name);
+    _searchText = _searchController.text;
+    _search=_searchText.toUpperCase();
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) myProvider.removeonfocus();
     });
   }
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-
   DataRow buildDataRow(List<String> data) {
-    print("from buildDataRow");
-    print(data);
     return DataRow(
       cells: data
           .map<DataCell>(
@@ -85,26 +71,26 @@ class _SearchListState extends State<SearchList>
         ),
       ),
     ];
-    print("columns");
-    print(columns.length);
     return columns;
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
+    final Pro myProvider = Provider.of<Pro>(context);
+
+    return Container( child:Consumer<Pro>(builder: (context, myProvider, child){ return new Scaffold(
       key: key,
-      floatingActionButton: _searchText.length!=null && v!=null? FloatingActionButton(
+      floatingActionButton: myProvider.name!=null && myProvider.v!=null && myProvider.IsSearching? FloatingActionButton(
         onPressed: () {
-          _handleSearchStart();
+          myProvider.handleSearchStart(myProvider.name);
         },
         child: Icon(Icons.repeat),
         backgroundColor: Colors.deepPurple,
       ):null,
-      //appBar:buildBar(context),
       body:Container(
         //height: 1000,
-       // width:800,
+        // width:800,
         child: Column(children: <Widget>[Padding(
           padding:EdgeInsets.fromLTRB(10.0,40.0,10.0,10.0),
           child:  Theme(
@@ -113,234 +99,165 @@ class _SearchListState extends State<SearchList>
               primaryColorDark: Colors.grey,
             ),
             child:TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          fillColor:Colors.white54,filled: true,
-          hintText: "Enter currency pair",
-          //prefixIcon: Icon(Icons.search,color: Colors.white,),
+              focusNode: focusNode,
+              controller: _searchController,
+              onChanged: myProvider.setname,
 
-          suffixIcon: _searchText.isNotEmpty ? IconButton(icon: Icon(Icons.search),onPressed: () {
-            _handleSearchStart();
-            setState(() {
-              // _searchController.clear();
-              FocusScope.of(context).requestFocus(new FocusNode());
-              _IsSearching = true;
-            });},) : null,
-          border: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.transparent, width: 2.0),
-            borderRadius: BorderRadius.all(
-              Radius.circular(0.0),
-            ),
-          ),
-        ),
-      ),),),
-        _searchText.length!=null && v!=null?Container(
-        //height: 1400,
-        width:700,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+              decoration: InputDecoration(
+                fillColor:Colors.white54,filled: true,
+                hintText: "Enter currency pair",
+                //prefixIcon: Icon(Icons.search,color: Colors.white,),
 
-            Row( mainAxisAlignment: MainAxisAlignment.start,children:<Widget>[
+                suffixIcon: myProvider.name!=null ? IconButton(icon: Icon(Icons.search),onPressed: () {
+                  myProvider.handleSearchStart(myProvider.name);
+                  myProvider.sethideview();
+                    // _searchController.clear();
+                    FocusScope.of(context).requestFocus(new FocusNode());
 
-              Padding(
-                padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,10.0),
-                child: _IsSearching? new Text("$_search",style: TextStyle(fontSize: 28.0,  fontWeight: FontWeight.bold),
-                ):new Text("")
-                ,),])
-              ,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+                  },) : null,
+                border: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.transparent, width: 2.0),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(0.0),
+                  ),
+                ),
+              ),
+            ),),),
+          myProvider.name!=null && myProvider.v!=null && myProvider.IsSearching?Container(
+            //height: 1400,
+            width:700,
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
-                    padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
 
-                    child: _IsSearching? new Text("Open",style: TextStyle(fontSize: 14.0)
-                    ):new Text("")
-                    ,
-                  ),Padding(
-                    padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,7.0),
+                  Row( mainAxisAlignment: MainAxisAlignment.start,children:<Widget>[
 
-                    child: _IsSearching? new Text("\$ $openn",style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
-                    ):new Text("")
-                    ,
-                  )])
-                  ,
-                  Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
-                      padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
-                      child: _IsSearching? new Text("High " ,style: TextStyle(fontSize: 14.0)
+                    Padding(
+                      padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,10.0),
+                      child: myProvider.IsSearching? new Text(myProvider.name.toUpperCase(),style: TextStyle(fontSize: 28.0,  fontWeight: FontWeight.bold),
                       ):new Text("")
-                      ,),
-                    Padding(
-                        padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,7.0),
-                        child: _IsSearching? new Text("\$ $h" ,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold)
-                        ):new Text("")
-                    )],)
-                    ,],),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start ,
-              children: <Widget>[
-                Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
-                    padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
+                      ,),])
+                  ,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
 
-                    child: _IsSearching? new Text("Low",style: TextStyle(fontSize: 14.0)
+                        child: myProvider.IsSearching? new Text("Open",style: TextStyle(fontSize: 14.0)
+                        ):new Text("")
+                        ,
+                      ),Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,7.0),
+
+                        child: myProvider.IsSearching? new Text("\$ "+ myProvider.openn,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
+                        ):new Text("")
+                        ,
+                      )])
+                      ,
+                      Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
+                        child: myProvider.IsSearching? new Text("High " ,style: TextStyle(fontSize: 14.0)
+                        ):new Text("")
+                        ,),
+                        Padding(
+                            padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,7.0),
+                            child: myProvider.IsSearching? new Text("\$"+ myProvider.h ,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold)
+                            ):new Text("")
+                        )],)
+                      ,],),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start ,
+                    children: <Widget>[
+                      Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,5.0),
+
+                        child: myProvider.IsSearching? new Text("Low",style: TextStyle(fontSize: 14.0)
+                        ):new Text("")
+                        ,
+                      ),Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,7.0),
+
+                        child: myProvider.IsSearching? new Text("\$"+ myProvider.low,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
+                        ):new Text("")
+                        ,
+                      )])
+                      ,
+                      Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
+                        padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
+                        child: myProvider.IsSearching? new Text("Last " ,style: TextStyle(fontSize: 14.0)
+                        ):new Text("")
+                        ,),
+                        Padding(
+                            padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,7.0),
+                            child: myProvider.IsSearching? new Text("\$" + myProvider.l ,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold)
+                            ):new Text("")
+                        )],)
+                      ,],),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
+                    padding:EdgeInsets.all(6.0),
+
+                    child: myProvider.IsSearching? new Text("Volume",style: TextStyle(fontSize: 14.0)
                     ):new Text("")
                     ,
                   ),Padding(
-                    padding:EdgeInsets.fromLTRB(10.0,10.0,90.0,7.0),
+                    padding:EdgeInsets.all(6.0),
 
-                    child: _IsSearching? new Text("\$ $low",style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
+                    child: myProvider.IsSearching? new Text( myProvider.v,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
                     ):new Text("")
                     ,
                   )])
-                  ,
-                Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
-                    padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
-                    child: _IsSearching? new Text("Last " ,style: TextStyle(fontSize: 14.0)
-                    ):new Text("")
-                    ,),
-                    Padding(
-                        padding:EdgeInsets.fromLTRB(10.0,10.0,10.0,7.0),
-                        child: _IsSearching? new Text("\$ $l" ,style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold)
-                        ):new Text("")
-                    )],)
-                  ,],),
-            Column(crossAxisAlignment: CrossAxisAlignment.start,children:<Widget>[Padding(
-              padding:EdgeInsets.all(6.0),
+                  ,myProvider.name!=null && myProvider.v!=null?Container(
 
-              child: _IsSearching? new Text("Volume",style: TextStyle(fontSize: 14.0)
-              ):new Text("")
-              ,
-            ),Padding(
-              padding:EdgeInsets.all(6.0),
+                    margin: EdgeInsets.fromLTRB(200.0,0.0,0.0,0.0),
+                    child: RaisedButton(
 
-              child: _IsSearching? new Text(" $v",style: TextStyle(fontSize: 16.0,fontWeight: FontWeight.bold),
-              ):new Text("")
-              ,
-            )])
-          ,_searchText.length!=null && v!=null?Container(
+                        color: Colors.white ,
+                        textColor: Colors.deepPurple,
+                        child: myProvider.cmbscritta ? Text("HIDE ORDER BOOK") : Text("VIEW ORDER BOOK"),
+                        //    style: TextStyle(fontSize: 14)
+                        onPressed: () {
+                          myProvider.hide_view(myProvider.cmbscritta);
+                        }
+                    ),
+                  ):Container(), myProvider.cmbscritta && myProvider.order!=null && myProvider.v!=null ?DataTable(/*horizontalMargin: 12.0,*/columnSpacing:10.0,headingRowHeight: 28.0,dividerThickness: 0.0, rows: <DataRow>[
+                    for (int i = 0; i < 5; i++) buildDataRow([myProvider.order["bids"][i][0],myProvider.order["bids"][i][1],myProvider.order["asks"][i][1],myProvider.order["asks"][i][0]]),
+                  ], columns: buildDataColumns())
+                      :Center(),]
+            )
+            ,): Container(
 
-              margin: EdgeInsets.fromLTRB(200.0,0.0,0.0,0.0),
-              child: RaisedButton(
+            height: 300,
+            width:350,
 
-                  color: pressGeoON ? Colors.white : Colors.white,
-                  textColor: Colors.deepPurple,
-                  child: cmbscritta ? Text("HIDE ORDER BOOK") : Text("VIEW ORDER BOOK"),
-                  //    style: TextStyle(fontSize: 14)
-                  onPressed: () {
-                    //getorder(_searchText);
-                    setState(() {
-                      pressGeoON = !pressGeoON;
-                      cmbscritta = !cmbscritta;
-                    });
-                  }
+            decoration: BoxDecoration(
+
+              image: DecorationImage(
+                image: AssetImage("image/images.png"),
+                fit: BoxFit.fitWidth,
               ),
-            ):Container(), cmbscritta && order!=null && v!=null ?DataTable(/*horizontalMargin: 12.0,*/columnSpacing:10.0,headingRowHeight: 28.0,dividerThickness: 0.0, rows: <DataRow>[
-                  for (int i = 0; i < 5; i++) buildDataRow([order["bids"][i][0],order["bids"][i][1],order["asks"][i][1],order["asks"][i][0]]),
-                ], columns: buildDataColumns())
-                :Center(),]
-        )
-        ,): Container(
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
 
-          height: 300,
-          width:350,
+                height: 50,
+                width: MediaQuery.of(context).size.width,
 
-        decoration: BoxDecoration(
+                alignment: Alignment.center,
+                child: Text(
+                  "Enter a currency pair to load data", style: TextStyle(fontSize: 18),
+                ),
 
-          image: DecorationImage(
-            image: AssetImage("image/images.png"),
-            fit: BoxFit.fitWidth,
-          ),
-        ),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-
-            height: 50,
-            width: MediaQuery.of(context).size.width,
-
-              alignment: Alignment.center,
-              child: Text(
-                "Enter a currency pair to load data", style: TextStyle(fontSize: 18),
               ),
+            ),
+          )
+          ,],),),
 
-          ),
-        ),
-      )
-      ,],),),);
-  }
+    );}));
 
-
-  Future<Map> getcurrency(String s) async {
-    http.Response response = await http.get(
-        'https://www.bitstamp.net/api/v2/ticker/'+s+'/');
-
-    print(response.statusCode);
-    if(response.statusCode==200){
-      setState(() {
-        currencyy=(json.decode(response.body));
-        openn=currencyy["open"];
-        v=currencyy["volume"];
-        l=currencyy["last"];
-        t=currencyy["timestamp"];
-        b=currencyy["bid"];
-        h=currencyy["high"];
-        low=currencyy["low"];
-      });
-    }
-    else{
-      setState(() {
-        currencyy=null;
-        v=null;
-        l=null;
-        t=null;
-        b=null;
-        h=null;
-        low=null;
-      });
-    }
-    return (json.decode(response.body));
-  }
-
-  Future<Map> getorder(String s) async {
-    http.Response response = await http.get(
-        'https://www.bitstamp.net/api/v2/order_book/'+s+'/');
-    print(response.statusCode);
-
-    if(response.statusCode==200){
-      setState(() {
-        order=(json.decode(response.body));
-      });
-    }
-    else{
-      setState(() {
-        order=null;
-      });
-    }
-    return (json.decode(response.body));
-  }
-  void _handleSearchStart() {
-
-    setState(() {
-
-      _IsSearching = true;
-       getcurrency(_searchText);
-       getorder(_searchText);
-
-    });
-  }
-
-  void _handleSearchEnd() {
-    setState(() {
-      this.actionIcon = new Icon(Icons.search, color: Colors.white,);
-      this.appBarTitle =
-      new Text("Search currency pair", style: new TextStyle(color: Colors.white),);
-
-      _IsSearching = false;
-      //_searchQuery.clear();
-    });
   }
 
 }
